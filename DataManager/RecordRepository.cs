@@ -14,12 +14,12 @@ namespace DataManager
             _appDbContext = appDbContext;
         }
 
-        public async Task<IEnumerable<Record>> GetRecords()
+        public async Task<IEnumerable<Record>> GetRecordsAsync()
         {
             return await _appDbContext.Records.ToListAsync();
         }
 
-        public async Task<IEnumerable<Record>> Search(FilterForm filterForm)
+        public async Task<IEnumerable<Record>> SearchAsync(FilterForm filterForm)
         {
             IQueryable<Record> query = _appDbContext.Records;
 

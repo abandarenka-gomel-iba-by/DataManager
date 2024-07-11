@@ -9,6 +9,16 @@
     <Window.DataContext>
         <local:ImportViewModel/>
     </Window.DataContext>
+    <Window.CommandBindings>
+        <CommandBinding Command="local:AppCommands.Filter" Executed="Filter_Executed"/>
+        <CommandBinding Command="local:AppCommands.Clear" Executed="Clear_Executed"/>
+        <CommandBinding Command="local:AppCommands.ImportCSV" Executed="ImportCSV_Executed"/>
+        <CommandBinding Command="local:AppCommands.ExportToExcel" Executed="ExportToExcel_Executed"/>
+        <CommandBinding Command="local:AppCommands.ExportToXML" Executed="ExportToXML_Executed"/>
+    </Window.CommandBindings>
+    <Window.Resources>
+        <local:FilterForm x:Key="filterForm"/>
+    </Window.Resources>
 
     <Grid>
         <Grid.RowDefinitions>
@@ -16,8 +26,8 @@
             <RowDefinition Height="*" />
             <RowDefinition Height="Auto" />
         </Grid.RowDefinitions>
-        
-        <GroupBox Header="Filter" Grid.Row="0" Margin="10">
+
+        <GroupBox Header="Filter" Grid.Row="0" Margin="10" DataContext="{StaticResource filterForm}">
             <Grid>
                 <Grid.RowDefinitions>
                     <RowDefinition Height="Auto" />
@@ -27,24 +37,53 @@
                 
                 <StackPanel Orientation="Horizontal" Grid.Row="0">
                     <TextBlock Text="From Date:" Margin="5"/>
-                    <DatePicker x:Name="dpFromDate" Width="120" Margin="5" SelectedDateChanged="dpFromDate_SelectedDateChanged"/>
+                    <DatePicker
+                        x:Name="dpFromDate"
+                        Width="120"
+                        Margin="5"
+                        SelectedDate="{Binding FromDate, UpdateSourceTrigger=PropertyChanged}"
+                        />
 
                     <TextBlock Text="To Date:" Margin="5"/>
-                    <DatePicker x:Name="dpToDate" Width="120" Margin="5" SelectedDateChanged="dpToDate_SelectedDateChanged"/>
+                    <DatePicker
+                        x:Name="dpToDate"
+                        Width="120"
+                        Margin="5"
+                        SelectedDate="{Binding ToDate, UpdateSourceTrigger=PropertyChanged}"
+                        />
                 </StackPanel>
 
                 <StackPanel Orientation="Horizontal" Grid.Row="1">
                     <TextBlock Text="First Name:" Margin="5"/>
-                    <TextBox x:Name="txtFirstNameFilter" Width="120" Margin="5" TextChanged="txtFirstNameFilter_TextChanged"/>
+                    <TextBox
+                        x:Name="txtFirstNameFilter"
+                        Width="120" Margin="5"
+                        Text="{Binding FirstName, UpdateSourceTrigger=PropertyChanged}"
+                        />
 
                     <TextBlock Text="Last Name:" Margin="5"/>
-                    <TextBox x:Name="txtLastNameFilter" Width="120" Margin="5" TextChanged="txtLastNameFilter_TextChanged"/>
+                    <TextBox
+                        x:Name="txtLastNameFilter"
+                        Width="120"
+                        Margin="5"
+                        Text="{Binding LastName, UpdateSourceTrigger=PropertyChanged}"
+                        />
 
                     <TextBlock Text="City:" Margin="5"/>
-                    <TextBox x:Name="txtCityFilter" Width="120" Margin="5" TextChanged="txtCityFilter_TextChanged"/>
+                    <TextBox
+                        x:Name="txtCityFilter"
+                        Width="120"
+                        Margin="5"
+                        Text="{Binding City, UpdateSourceTrigger=PropertyChanged}"
+                        />
 
                     <TextBlock Text="Country:" Margin="5"/>
-                    <TextBox x:Name="txtCountryFilter" Width="120" Margin="5" TextChanged="txtCountryFilter_TextChanged"/>
+                    <TextBox
+                        x:Name="txtCountryFilter"
+                        Width="120"
+                        Margin="5"
+                        Text="{Binding Country, UpdateSourceTrigger=PropertyChanged}"
+                        />
                 </StackPanel>
 
                 <StackPanel Orientation="Horizontal" Grid.Row="2">
@@ -54,7 +93,7 @@
                         Width="80"
                         Margin="5"
                         ToolTip="Apply filter parameters"
-                        Click="btnFilter_Click"
+                        Command="local:AppCommands.Filter"
                         />
                     <Button
                         Content="Clear"
@@ -62,7 +101,7 @@
                         Width="80"
                         Margin="5"
                         ToolTip="Clear filter"
-                        Click="btnClear_Click"
+                        Command="local:AppCommands.Clear"
                         />
                 </StackPanel>
             </Grid>
@@ -82,8 +121,8 @@
                     Content="Import CSV"
                     Margin="10"
                     Width="100"
-                    Click="btnImport_Click"
                     ToolTip="Import Data from CSV file to DataBase"
+                    Command="local:AppCommands.ImportCSV"
                     />
                 <StatusBar Visibility="{Binding StatusBarVisibility}" Margin="0,10,0,10">
                     <StatusBarItem>
@@ -102,16 +141,16 @@
                     Content="Export to Excel" 
                     Margin="10"
                     Width="100" 
-                    Click="btnExportExcel_Click"
                     ToolTip="Export result to Excel file"
+                    Command="local:AppCommands.ExportToExcel"
                     />
                 <Button 
                     Name="btnExportXml"
                     Content="Export to XML"
                     Margin="10"
-                    Width="100" 
-                    Click="btnExportXml_Click"
+                    Width="100"
                     ToolTip="Export result to XML file"
+                    Command="local:AppCommands.ExportToXML"
                     />
             </StackPanel>
         </Grid>

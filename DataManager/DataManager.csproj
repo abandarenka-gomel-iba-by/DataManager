@@ -74,6 +74,7 @@
     </Reference>
     <Reference Include="System.ComponentModel.Composition" />
     <Reference Include="System.ComponentModel.DataAnnotations" />
+    <Reference Include="System.Configuration" />
     <Reference Include="System.Data" />
     <Reference Include="System.IO, Version=4.1.1.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a, processorArchitecture=MSIL">
       <HintPath>..\packages\System.IO.4.3.0\lib\net462\System.IO.dll</HintPath>
@@ -151,10 +152,12 @@
       <Generator>MSBuild:Compile</Generator>
       <SubType>Designer</SubType>
     </ApplicationDefinition>
+    <Compile Include="AppCommands.cs" />
     <Compile Include="AppDbContext.cs" />
     <Compile Include="FilterForm.cs" />
     <Compile Include="ImportViewModel.cs" />
     <Compile Include="IRecordRepository.cs" />
+    <Compile Include="ProgressChange.cs" />
     <Compile Include="RecordMap.cs" />
     <Compile Include="CsvImporter.cs" />
     <Compile Include="DataExporter.cs" />

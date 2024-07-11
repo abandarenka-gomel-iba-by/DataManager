@@ -1,39 +1,35 @@
 ﻿using CsvHelper;
 using CsvHelper.Configuration;
+using System;
 using System.Collections.Generic;
 using System.Globalization;
 using System.IO;
 using System.Linq;
 using System.Threading.Tasks;
-using System.Windows;
+using System.Configuration;
 
 namespace DataManager
 {
     internal class CsvImporter
     {
-        public ImportViewModel _viewModel;
+        public event EventHandler<ProgressChange> ProgressChanged;
 
-        public CsvImporter(ImportViewModel viewModel)
-        {
-            _viewModel = viewModel;
-        }
-
-        public async Task ImportCsv(string filePath)
+        public async Task ImportCsvAsync(string filePath)
         {
             var config = new CsvConfiguration(CultureInfo.InvariantCulture)
             {
                 Delimiter = ";",
             };
-            int totalRecords = File.ReadLines(filePath).Count() - 1;
+            //int totalRecords = File.ReadLines(filePath).Count() - 1;
+            var lines = await Task.Run(() => File.ReadLines(filePath));
+            int totalRecords = lines.Count() - 1;
             int processedRecords = 0;
-            _viewModel.StatusBarVisibility = Visibility.Visible;
-            _viewModel.StatusMessage = "Starting import...";
-            _viewModel.Progress = 0;
+            OnProgressChanged(new ProgressChange(totalRecords, processedRecords, "Starting import..."));
 
             using (var reader = new StreamReader(filePath))
             using (var csv = new CsvReader(reader, config))
             {
-                int batchSize = 1000;
+                int batchSize = int.Parse(ConfigurationManager.AppSettings["BatchSize"]);
                 var batch = new List<Record>();
 
                 while (await csv.ReadAsync())
@@ -75,13 +71,12 @@ namespace DataManager
             {
                 message = "Done";
             }
-            _viewModel.StatusMessage = message;
-            _viewModel.Progress = (int)((double)processedRecords / totalRecords * 100);
+            OnProgressChanged(new ProgressChange(totalRecords, processedRecords, message));
         }
 
-        public void HideProgress()
+        protected virtual void OnProgressChanged(ProgressChange e)
         {
-            _viewModel.StatusBarVisibility = Visibility.Collapsed;
+            ProgressChanged?.Invoke(this, e);
         }
     }
 }

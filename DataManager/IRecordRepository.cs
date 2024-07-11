@@ -5,7 +5,7 @@ namespace DataManager
 {
     internal interface IRecordRepository
     {
-        Task<IEnumerable<Record>> GetRecords();
-        Task<IEnumerable<Record>> Search(FilterForm filterForm);
+        Task<IEnumerable<Record>> GetRecordsAsync();
+        Task<IEnumerable<Record>> SearchAsync(FilterForm filterForm);
     }
 }
