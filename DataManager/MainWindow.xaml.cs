@@ -1,25 +1,26 @@
 ﻿using CsvHelper;
+using MahApps.Metro.Controls;
 using Microsoft.Win32;
 using System;
-using System.Windows;
-using System.Threading.Tasks;
 using System.Collections.Generic;
-using System.Windows.Input;
-using System.Configuration;
-using System.Diagnostics;
 using System.Collections.ObjectModel;
 using System.ComponentModel;
-using System.Data.Entity;
+using System.Configuration;
+using System.Diagnostics;
 using System.Globalization;
+using System.Linq;
 using System.Threading;
+using System.Threading.Tasks;
+using System.Windows;
 using System.Windows.Controls;
+using System.Windows.Input;
 
 namespace DataManager
 {
     /// <summary>
     /// Interaction logic for MainWindow.xaml
     /// </summary>
-    public partial class MainWindow : Window
+    public partial class MainWindow : MetroWindow
     {
         private IRecordRepository _recordRepository;
 
@@ -64,7 +65,7 @@ namespace DataManager
                 }
                 catch (Exception ex)
                 {
-                    MessageBox.Show("Failed to connect to the database. Please edit the connection string.", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
+                    HandleDisplayError(ex, "Failed to connect to the database. Please edit the connection string.");
                     string connectionString = ConfigurationManager.ConnectionStrings["AppDbContext"].ConnectionString;
                     ConnectionDBWindow connectionStringWindow = new ConnectionDBWindow(connectionString);
                     if (connectionStringWindow.ShowDialog() == true)
@@ -118,17 +119,21 @@ namespace DataManager
                 }
                 catch (CsvHelperException ex)
                 {
-                    MessageBox.Show($"CSV format error: {ex.Message}", "Import Error", MessageBoxButton.OK, MessageBoxImage.Error);
+                    HandleDisplayError(ex, "CSV format error");
                     _viewModel.StatusBarVisibility = Visibility.Collapsed;
                 }
                 catch (Exception ex)
                 {
-                    MessageBox.Show($"An error occurred: {ex.Message}", "Import Error", MessageBoxButton.OK, MessageBoxImage.Error);
+                    HandleDisplayError(ex, "An error occurred");
                     _viewModel.StatusBarVisibility = Visibility.Collapsed;
                 }
 
                 await LoadDataAsync();
             }
+        }
+        private void HandleDisplayError(Exception ex, string errorMessage)
+        {
+            MessageBox.Show($"{errorMessage}: {ex.Message}", "Import Error", MessageBoxButton.OK, MessageBoxImage.Error);
         }
 
         private async void ExportToExcel_Executed(object sender, ExecutedRoutedEventArgs e)
@@ -192,12 +197,22 @@ namespace DataManager
             Thread.CurrentThread.CurrentCulture = new CultureInfo(language);
             Thread.CurrentThread.CurrentUICulture = new CultureInfo(language);
 
+            var metroResourceDictionaries = Application.Current.Resources.MergedDictionaries
+                .Where(d => d.Source != null && d.Source.OriginalString.Contains("MahApps.Metro"))
+                .ToList();
+
             Application.Current.Resources.MergedDictionaries.Clear();
-            ResourceDictionary resdict = new ResourceDictionary()
+
+            foreach (var dict in metroResourceDictionaries)
+            {
+                Application.Current.Resources.MergedDictionaries.Add(dict);
+            }
+
+            ResourceDictionary languageDict = new ResourceDictionary()
             {
                 Source = new Uri($"/Dictionary-{language}.xaml", UriKind.Relative)
             };
-            Application.Current.Resources.MergedDictionaries.Add(resdict);
+            Application.Current.Resources.MergedDictionaries.Add(languageDict);
         }
 
         private void ChangeLanguage_Executed(object sender, ExecutedRoutedEventArgs e)

@@ -2,11 +2,11 @@
 using CsvHelper.Configuration;
 using System;
 using System.Collections.Generic;
+using System.Configuration;
 using System.Globalization;
 using System.IO;
 using System.Linq;
 using System.Threading.Tasks;
-using System.Configuration;
 
 namespace DataManager
 {
