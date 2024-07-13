@@ -15,6 +15,7 @@
     <WarningLevel>4</WarningLevel>
     <AutoGenerateBindingRedirects>true</AutoGenerateBindingRedirects>
     <Deterministic>true</Deterministic>
+    <LangVersion>8</LangVersion>
     <NuGetPackageImportStamp>
     </NuGetPackageImportStamp>
   </PropertyGroup>
@@ -154,6 +155,9 @@
     </ApplicationDefinition>
     <Compile Include="AppCommands.cs" />
     <Compile Include="AppDbContext.cs" />
+    <Compile Include="ConnectionDBWindow.xaml.cs">
+      <DependentUpon>ConnectionDBWindow.xaml</DependentUpon>
+    </Compile>
     <Compile Include="FilterForm.cs" />
     <Compile Include="ImportViewModel.cs" />
     <Compile Include="IRecordRepository.cs" />
@@ -163,6 +167,18 @@
     <Compile Include="DataExporter.cs" />
     <Compile Include="Record.cs" />
     <Compile Include="RecordRepository.cs" />
+    <Page Include="ConnectionDBWindow.xaml">
+      <SubType>Designer</SubType>
+      <Generator>MSBuild:Compile</Generator>
+    </Page>
+    <Page Include="Dictionary-en-US.xaml">
+      <SubType>Designer</SubType>
+      <Generator>MSBuild:Compile</Generator>
+    </Page>
+    <Page Include="Dictionary-ru-RU.xaml">
+      <SubType>Designer</SubType>
+      <Generator>MSBuild:Compile</Generator>
+    </Page>
     <Page Include="MainWindow.xaml">
       <Generator>MSBuild:Compile</Generator>
       <SubType>Designer</SubType>

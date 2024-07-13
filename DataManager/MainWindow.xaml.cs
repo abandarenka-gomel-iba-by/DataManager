@@ -3,9 +3,16 @@ using Microsoft.Win32;
 using System;
 using System.Windows;
 using System.Threading.Tasks;
-using System.Windows.Controls;
 using System.Collections.Generic;
 using System.Windows.Input;
+using System.Configuration;
+using System.Diagnostics;
+using System.Collections.ObjectModel;
+using System.ComponentModel;
+using System.Data.Entity;
+using System.Globalization;
+using System.Threading;
+using System.Windows.Controls;
 
 namespace DataManager
 {
@@ -14,7 +21,7 @@ namespace DataManager
     /// </summary>
     public partial class MainWindow : Window
     {
-        private readonly IRecordRepository _recordRepository;
+        private IRecordRepository _recordRepository;
 
         public static RoutedCommand CustomRoutedCommand = new RoutedCommand();
 
@@ -23,20 +30,68 @@ namespace DataManager
         private DataExporter _dataExporter;
         private ImportViewModel _viewModel;
         private FilterForm _filterForm;
+        private ObservableCollection<Record> _records;
 
         public MainWindow()
         {
             InitializeComponent();
+            InitializeDatabase();
 
             _viewModel = (ImportViewModel)DataContext;
-            _context = new AppDbContext();
-            _recordRepository = new RecordRepository(new AppDbContext());
+            _recordRepository = new RecordRepository(_context);
             _csvImporter = new CsvImporter();
             _dataExporter = new DataExporter();
             _filterForm = (FilterForm)FindResource("filterForm");
+            _records = new ObservableCollection<Record>();
+            dataGrid.ItemsSource = _records;
 
             _csvImporter.ProgressChanged += CsvImporter_ProgressChanged;
             Loaded += MainWindow_Loaded;
+        }
+
+        private void InitializeDatabase()
+        {
+            while (true)
+            {
+                try
+                {
+                    string currentConnectionString = ConfigurationManager.ConnectionStrings["AppDbContext"].ConnectionString;
+                    Debug.WriteLine("Current Connection String: " + currentConnectionString);
+
+                    _context = new AppDbContext();
+                    _context.Database.Initialize(false);
+                    break;
+                }
+                catch (Exception ex)
+                {
+                    MessageBox.Show("Failed to connect to the database. Please edit the connection string.", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
+                    string connectionString = ConfigurationManager.ConnectionStrings["AppDbContext"].ConnectionString;
+                    ConnectionDBWindow connectionStringWindow = new ConnectionDBWindow(connectionString);
+                    if (connectionStringWindow.ShowDialog() == true)
+                    {
+                        UpdateConnectionString(connectionStringWindow.ConnectionString);
+                    }
+                    else
+                    {
+                        Application.Current.Shutdown();
+                        break;
+                    }
+                }
+            }
+        }
+
+        private void UpdateConnectionString(string newConnectionString)
+        {
+            var config = ConfigurationManager.OpenExeConfiguration(ConfigurationUserLevel.None);
+            config.ConnectionStrings.ConnectionStrings["AppDbContext"].ConnectionString = newConnectionString;
+            config.Save(ConfigurationSaveMode.Modified, true);
+            ConfigurationManager.RefreshSection("connectionStrings");
+        }
+
+        public event PropertyChangedEventHandler PropertyChanged;
+        protected virtual void OnPropertyChanged(string propertyName)
+        {
+            PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propertyName));
         }
 
         private async void MainWindow_Loaded(object sender, RoutedEventArgs e)
@@ -100,12 +155,19 @@ namespace DataManager
 
         private async Task LoadDataAsync()
         {
-            dataGrid.ItemsSource = await _recordRepository.GetRecordsAsync();
+            await foreach (var record in _recordRepository.GetRecordsAsync())
+            {
+                _records.Add(record);
+            }
         }
 
         private async void Filter_Executed(object sender, ExecutedRoutedEventArgs e)
         {
-            dataGrid.ItemsSource = await _recordRepository.SearchAsync(_filterForm);
+            _records.Clear();
+            await foreach (var record in _recordRepository.SearchAsync(_filterForm))
+            {
+                _records.Add(record);
+            }
         }
 
         private async void Clear_Executed(object sender, ExecutedRoutedEventArgs e)
@@ -123,6 +185,27 @@ namespace DataManager
                 _viewModel.StatusMessage = e.Message;
                 _viewModel.Progress = (int)((double)e.Current / e.Total * 100);
             });
+        }
+
+        private void SetLanguage(string language)
+        {
+            Thread.CurrentThread.CurrentCulture = new CultureInfo(language);
+            Thread.CurrentThread.CurrentUICulture = new CultureInfo(language);
+
+            Application.Current.Resources.MergedDictionaries.Clear();
+            ResourceDictionary resdict = new ResourceDictionary()
+            {
+                Source = new Uri($"/Dictionary-{language}.xaml", UriKind.Relative)
+            };
+            Application.Current.Resources.MergedDictionaries.Add(resdict);
+        }
+
+        private void ChangeLanguage_Executed(object sender, ExecutedRoutedEventArgs e)
+        {
+            if (e.OriginalSource is MenuItem menuItem && menuItem.Tag is string language)
+            {
+                SetLanguage(language);
+            }
         }
     }
 }

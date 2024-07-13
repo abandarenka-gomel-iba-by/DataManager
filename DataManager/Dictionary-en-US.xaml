@@ -1,0 +1,17 @@
+﻿<ResourceDictionary xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+                    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+                    xmlns:System="clr-namespace:System;assembly=mscorlib">
+    <System:String x:Key="TitleStr">Data Manager</System:String>
+    <System:String x:Key="FilterSectionTitleStr">Filter</System:String>
+    <System:String x:Key="FromDateStr">From Date</System:String>
+    <System:String x:Key="ToDateStr">To Date</System:String>
+    <System:String x:Key="FirstNameStr">First Name</System:String>
+    <System:String x:Key="LastNameStr">Last Name</System:String>
+    <System:String x:Key="CityStr">City</System:String>
+    <System:String x:Key="CountryStr">Country</System:String>
+    <System:String x:Key="FilterBtnStr">Filtr</System:String>
+    <System:String x:Key="ClearBtnStr">Clear</System:String>
+    <System:String x:Key="ImportCSVBtnStr">Import CSV</System:String>
+    <System:String x:Key="ExportExcelBtnStr">Export to Excel</System:String>
+    <System:String x:Key="ExportXMLBtnStr">Export to XML</System:String>
+</ResourceDictionary>

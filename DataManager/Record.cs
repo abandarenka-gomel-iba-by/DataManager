@@ -2,7 +2,7 @@
 
 namespace DataManager
 {
-    internal class Record
+    public class Record
     {
         public int Id { get; set; }
         public DateTime Date { get; set; }

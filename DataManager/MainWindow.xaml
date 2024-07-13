@@ -5,7 +5,8 @@
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:local="clr-namespace:DataManager"
         mc:Ignorable="d"
-        Title="Data Manager" Height="500" Width="800">
+        Title="{DynamicResource TitleStr}"
+        Height="500" Width="800">
     <Window.DataContext>
         <local:ImportViewModel/>
     </Window.DataContext>
@@ -15,6 +16,7 @@
         <CommandBinding Command="local:AppCommands.ImportCSV" Executed="ImportCSV_Executed"/>
         <CommandBinding Command="local:AppCommands.ExportToExcel" Executed="ExportToExcel_Executed"/>
         <CommandBinding Command="local:AppCommands.ExportToXML" Executed="ExportToXML_Executed"/>
+        <CommandBinding Command="local:AppCommands.ChangeLanguage" Executed="ChangeLanguage_Executed"/>
     </Window.CommandBindings>
     <Window.Resources>
         <local:FilterForm x:Key="filterForm"/>
@@ -23,20 +25,33 @@
     <Grid>
         <Grid.RowDefinitions>
             <RowDefinition Height="Auto" />
+            <RowDefinition Height="Auto" />
             <RowDefinition Height="*" />
             <RowDefinition Height="Auto" />
         </Grid.RowDefinitions>
 
-        <GroupBox Header="Filter" Grid.Row="0" Margin="10" DataContext="{StaticResource filterForm}">
+        <DockPanel Grid.Row="0">
+            <Menu DockPanel.Dock="Top">
+                <MenuItem Header="Language">
+                    <MenuItem Header="English" Command="local:AppCommands.ChangeLanguage" Tag="en-US"/>
+                    <MenuItem Header="Русский" Command="local:AppCommands.ChangeLanguage" Tag="ru-RU"/>
+                </MenuItem>
+            </Menu>
+        </DockPanel>
+
+        <GroupBox Header="{DynamicResource FilterSectionTitleStr}" Grid.Row="1" Margin="10" DataContext="{StaticResource filterForm}">
             <Grid>
                 <Grid.RowDefinitions>
                     <RowDefinition Height="Auto" />
                     <RowDefinition Height="Auto" />
                     <RowDefinition Height="Auto" />
                 </Grid.RowDefinitions>
-                
+
                 <StackPanel Orientation="Horizontal" Grid.Row="0">
-                    <TextBlock Text="From Date:" Margin="5"/>
+                    <TextBlock Margin="5">
+                        <Run Text="{DynamicResource FromDateStr}" />
+                        <Run Text=":" />
+                    </TextBlock>
                     <DatePicker
                         x:Name="dpFromDate"
                         Width="120"
@@ -44,7 +59,10 @@
                         SelectedDate="{Binding FromDate, UpdateSourceTrigger=PropertyChanged}"
                         />
 
-                    <TextBlock Text="To Date:" Margin="5"/>
+                    <TextBlock Margin="5">
+                        <Run Text="{DynamicResource ToDateStr}" />
+                        <Run Text=":" />
+                    </TextBlock>
                     <DatePicker
                         x:Name="dpToDate"
                         Width="120"
@@ -54,14 +72,20 @@
                 </StackPanel>
 
                 <StackPanel Orientation="Horizontal" Grid.Row="1">
-                    <TextBlock Text="First Name:" Margin="5"/>
+                    <TextBlock Margin="5">
+                        <Run Text="{DynamicResource FirstNameStr}" />
+                        <Run Text=":" />
+                    </TextBlock>
                     <TextBox
                         x:Name="txtFirstNameFilter"
                         Width="120" Margin="5"
                         Text="{Binding FirstName, UpdateSourceTrigger=PropertyChanged}"
                         />
 
-                    <TextBlock Text="Last Name:" Margin="5"/>
+                    <TextBlock Margin="5">
+                        <Run Text="{DynamicResource LastNameStr}" />
+                        <Run Text=":" />
+                    </TextBlock>
                     <TextBox
                         x:Name="txtLastNameFilter"
                         Width="120"
@@ -69,7 +93,10 @@
                         Text="{Binding LastName, UpdateSourceTrigger=PropertyChanged}"
                         />
 
-                    <TextBlock Text="City:" Margin="5"/>
+                    <TextBlock Margin="5">
+                        <Run Text="{DynamicResource CityStr}" />
+                        <Run Text=":" />
+                    </TextBlock>
                     <TextBox
                         x:Name="txtCityFilter"
                         Width="120"
@@ -77,7 +104,10 @@
                         Text="{Binding City, UpdateSourceTrigger=PropertyChanged}"
                         />
 
-                    <TextBlock Text="Country:" Margin="5"/>
+                    <TextBlock Margin="5">
+                        <Run Text="{DynamicResource CountryStr}" />
+                        <Run Text=":" />
+                    </TextBlock>
                     <TextBox
                         x:Name="txtCountryFilter"
                         Width="120"
@@ -88,7 +118,7 @@
 
                 <StackPanel Orientation="Horizontal" Grid.Row="2">
                     <Button
-                        Content="Filter"
+                        Content="{DynamicResource FilterBtnStr}"
                         Name="btnFilter"
                         Width="80"
                         Margin="5"
@@ -96,7 +126,7 @@
                         Command="local:AppCommands.Filter"
                         />
                     <Button
-                        Content="Clear"
+                        Content="{DynamicResource ClearBtnStr}"
                         Name="btnClear"
                         Width="80"
                         Margin="5"
@@ -107,9 +137,9 @@
             </Grid>
         </GroupBox>
 
-        <DataGrid Name="dataGrid" Grid.Row="1" Margin="10"/>
-       
-        <Grid Grid.Row="2">
+        <DataGrid Name="dataGrid" Grid.Row="2" Margin="10" AutoGenerateColumns="True"/>
+
+        <Grid Grid.Row="3">
             <Grid.ColumnDefinitions>
                 <ColumnDefinition Width="1*"/>
                 <ColumnDefinition Width="1*"/>
@@ -118,7 +148,7 @@
             <StackPanel Orientation="Horizontal" Grid.Column="0">
                 <Button
                     Name="btnImport"
-                    Content="Import CSV"
+                    Content="{DynamicResource ImportCSVBtnStr}"
                     Margin="10"
                     Width="100"
                     ToolTip="Import Data from CSV file to DataBase"
@@ -138,7 +168,7 @@
             <StackPanel Orientation="Horizontal" Grid.Column="1">
                 <Button 
                     Name="btnExportExcel" 
-                    Content="Export to Excel" 
+                    Content="{DynamicResource ExportExcelBtnStr}" 
                     Margin="10"
                     Width="100" 
                     ToolTip="Export result to Excel file"
@@ -146,7 +176,7 @@
                     />
                 <Button 
                     Name="btnExportXml"
-                    Content="Export to XML"
+                    Content="{DynamicResource ExportXMLBtnStr}"
                     Margin="10"
                     Width="100"
                     ToolTip="Export result to XML file"

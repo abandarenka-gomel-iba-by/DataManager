@@ -1,0 +1,17 @@
+﻿<ResourceDictionary xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+                    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+                    xmlns:System="clr-namespace:System;assembly=mscorlib">
+    <System:String x:Key="TitleStr">Менеджер данных</System:String>
+    <System:String x:Key="FilterSectionTitleStr">Фильтр</System:String>
+    <System:String x:Key="FromDateStr">Дата от</System:String>
+    <System:String x:Key="ToDateStr">Дата до</System:String>
+    <System:String x:Key="FirstNameStr">Имя</System:String>
+    <System:String x:Key="LastNameStr">Фамилия</System:String>
+    <System:String x:Key="CityStr">Город</System:String>
+    <System:String x:Key="CountryStr">Страна</System:String>
+    <System:String x:Key="FilterBtnStr">Фильтровать</System:String>
+    <System:String x:Key="ClearBtnStr">Очистить</System:String>
+    <System:String x:Key="ImportCSVBtnStr">Импорт из CSV</System:String>
+    <System:String x:Key="ExportExcelBtnStr">Экспорт в Excel</System:String>
+    <System:String x:Key="ExportXMLBtnStr">Экспорт в XML</System:String>
+</ResourceDictionary>
