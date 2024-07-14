@@ -6,7 +6,6 @@ using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.ComponentModel;
 using System.Configuration;
-using System.Diagnostics;
 using System.Globalization;
 using System.Linq;
 using System.Threading;
@@ -52,16 +51,14 @@ namespace DataManager
 
         private void InitializeDatabase()
         {
-            while (true)
+            bool connectionEstablished = false;
+            while (!connectionEstablished)
             {
                 try
                 {
-                    string currentConnectionString = ConfigurationManager.ConnectionStrings["AppDbContext"].ConnectionString;
-                    Debug.WriteLine("Current Connection String: " + currentConnectionString);
-
                     _context = new AppDbContext();
                     _context.Database.Initialize(false);
-                    break;
+                    connectionEstablished = true;
                 }
                 catch (Exception ex)
                 {
@@ -71,6 +68,12 @@ namespace DataManager
                     if (connectionStringWindow.ShowDialog() == true)
                     {
                         UpdateConnectionString(connectionStringWindow.ConnectionString);
+
+                        if (_context != null)
+                        {
+                            _context.Dispose();
+                            _context = null;
+                        }
                     }
                     else
                     {

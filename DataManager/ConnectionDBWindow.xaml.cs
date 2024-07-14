@@ -1,11 +1,12 @@
-﻿using System.Windows;
+﻿using MahApps.Metro.Controls;
+using System.Windows;
 
 namespace DataManager
 {
     /// <summary>
     /// Interaction logic for ConnectionDBWindow.xaml
     /// </summary>
-    public partial class ConnectionDBWindow : Window
+    public partial class ConnectionDBWindow : MetroWindow
     {
         public string ConnectionString { get; set; }
 

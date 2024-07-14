@@ -4,11 +4,11 @@ namespace DataManager
 {
     internal class AppDbContext : DbContext
     {
-        public DbSet<Record> Records { get; set; }
-
         public AppDbContext() : base("name=AppDbContext")
         {
         }
+
+        public DbSet<Record> Records { get; set; }
 
         static AppDbContext()
         {

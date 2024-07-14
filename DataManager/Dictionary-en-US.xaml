@@ -9,7 +9,7 @@
     <System:String x:Key="LastNameStr">Last Name</System:String>
     <System:String x:Key="CityStr">City</System:String>
     <System:String x:Key="CountryStr">Country</System:String>
-    <System:String x:Key="FilterBtnStr">Filtr</System:String>
+    <System:String x:Key="FilterBtnStr">Filter</System:String>
     <System:String x:Key="ClearBtnStr">Clear</System:String>
     <System:String x:Key="ImportCSVBtnStr">Import CSV</System:String>
     <System:String x:Key="ExportExcelBtnStr">Export to Excel</System:String>
