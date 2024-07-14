@@ -1,38 +1,101 @@
 ﻿using CsvHelper;
+using MahApps.Metro.Controls;
 using Microsoft.Win32;
 using System;
-using System.Windows;
-using System.Threading.Tasks;
-using System.Windows.Controls;
 using System.Collections.Generic;
+using System.Collections.ObjectModel;
+using System.ComponentModel;
+using System.Configuration;
+using System.Globalization;
+using System.Linq;
+using System.Threading;
+using System.Threading.Tasks;
+using System.Windows;
+using System.Windows.Controls;
+using System.Windows.Input;
 
 namespace DataManager
 {
     /// <summary>
     /// Interaction logic for MainWindow.xaml
     /// </summary>
-    public partial class MainWindow : Window
+    public partial class MainWindow : MetroWindow
     {
-        private readonly IRecordRepository _recordRepository;
+        private IRecordRepository _recordRepository;
+
+        public static RoutedCommand CustomRoutedCommand = new RoutedCommand();
 
         private AppDbContext _context;
         private CsvImporter _csvImporter;
         private DataExporter _dataExporter;
         private ImportViewModel _viewModel;
         private FilterForm _filterForm;
+        private ObservableCollection<Record> _records;
 
         public MainWindow()
         {
             InitializeComponent();
+            InitializeDatabase();
 
             _viewModel = (ImportViewModel)DataContext;
-            _context = new AppDbContext();
-            _recordRepository = new RecordRepository(new AppDbContext());
-            _csvImporter = new CsvImporter(_viewModel);
+            _recordRepository = new RecordRepository(_context);
+            _csvImporter = new CsvImporter();
             _dataExporter = new DataExporter();
-            _filterForm = new FilterForm();
+            _filterForm = (FilterForm)FindResource("filterForm");
+            _records = new ObservableCollection<Record>();
+            dataGrid.ItemsSource = _records;
 
+            _csvImporter.ProgressChanged += CsvImporter_ProgressChanged;
             Loaded += MainWindow_Loaded;
+        }
+
+        private void InitializeDatabase()
+        {
+            bool connectionEstablished = false;
+            while (!connectionEstablished)
+            {
+                try
+                {
+                    _context = new AppDbContext();
+                    _context.Database.Initialize(false);
+                    connectionEstablished = true;
+                }
+                catch (Exception ex)
+                {
+                    HandleDisplayError(ex, "Failed to connect to the database. Please edit the connection string.");
+                    string connectionString = ConfigurationManager.ConnectionStrings["AppDbContext"].ConnectionString;
+                    ConnectionDBWindow connectionStringWindow = new ConnectionDBWindow(connectionString);
+                    if (connectionStringWindow.ShowDialog() == true)
+                    {
+                        UpdateConnectionString(connectionStringWindow.ConnectionString);
+
+                        if (_context != null)
+                        {
+                            _context.Dispose();
+                            _context = null;
+                        }
+                    }
+                    else
+                    {
+                        Application.Current.Shutdown();
+                        break;
+                    }
+                }
+            }
+        }
+
+        private void UpdateConnectionString(string newConnectionString)
+        {
+            var config = ConfigurationManager.OpenExeConfiguration(ConfigurationUserLevel.None);
+            config.ConnectionStrings.ConnectionStrings["AppDbContext"].ConnectionString = newConnectionString;
+            config.Save(ConfigurationSaveMode.Modified, true);
+            ConfigurationManager.RefreshSection("connectionStrings");
+        }
+
+        public event PropertyChangedEventHandler PropertyChanged;
+        protected virtual void OnPropertyChanged(string propertyName)
+        {
+            PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propertyName));
         }
 
         private async void MainWindow_Loaded(object sender, RoutedEventArgs e)
@@ -40,7 +103,7 @@ namespace DataManager
             await LoadDataAsync();
         }
 
-        private async void btnImport_Click(object sender, RoutedEventArgs e)
+        private async void ImportCSV_Executed(object sender, ExecutedRoutedEventArgs e)
         {
             var openFileDialog = new OpenFileDialog();
             openFileDialog.Filter = "CSV files (*.csv)|*.csv";
@@ -55,88 +118,112 @@ namespace DataManager
 
                 try
                 {
-                    await _csvImporter.ImportCsv(filePath);
+                    await _csvImporter.ImportCsvAsync(filePath);
                 }
                 catch (CsvHelperException ex)
                 {
-                    MessageBox.Show($"CSV format error: {ex.Message}", "Import Error", MessageBoxButton.OK, MessageBoxImage.Error);
-                    _csvImporter.HideProgress();
+                    HandleDisplayError(ex, "CSV format error");
+                    _viewModel.StatusBarVisibility = Visibility.Collapsed;
                 }
                 catch (Exception ex)
                 {
-                    MessageBox.Show($"An error occurred: {ex.Message}", "Import Error", MessageBoxButton.OK, MessageBoxImage.Error);
-                    _csvImporter.HideProgress();
+                    HandleDisplayError(ex, "An error occurred");
+                    _viewModel.StatusBarVisibility = Visibility.Collapsed;
                 }
 
                 await LoadDataAsync();
             }
         }
+        private void HandleDisplayError(Exception ex, string errorMessage)
+        {
+            MessageBox.Show($"{errorMessage}: {ex.Message}", "Import Error", MessageBoxButton.OK, MessageBoxImage.Error);
+        }
 
-        private void btnExportExcel_Click(object sender, RoutedEventArgs e)
+        private async void ExportToExcel_Executed(object sender, ExecutedRoutedEventArgs e)
         {
             var saveFileDialog = new SaveFileDialog();
             saveFileDialog.Filter = "Excel files (*.xlsx)|*.xlsx";
             if (saveFileDialog.ShowDialog() == true)
             {
                 var records = dataGrid.ItemsSource as List<Record>;
-                _dataExporter.ExportToExcel(records, saveFileDialog.FileName);
+                await _dataExporter.ExportToExcelAsync(records, saveFileDialog.FileName);
             }
         }
 
-        private void btnExportXml_Click(object sender, RoutedEventArgs e)
+        private async void ExportToXML_Executed(object sender, ExecutedRoutedEventArgs e)
         {
             var saveFileDialog = new SaveFileDialog();
             saveFileDialog.Filter = "XML files (*.xml)|*.xml";
             if (saveFileDialog.ShowDialog() == true)
             {
                 var records = dataGrid.ItemsSource as List<Record>;
-                _dataExporter.ExportToXml(records, saveFileDialog.FileName);
+                await _dataExporter.ExportToXmlAsync(records, saveFileDialog.FileName);
             }
         }
 
         private async Task LoadDataAsync()
         {
-            dataGrid.ItemsSource = await _recordRepository.GetRecords();
+            await foreach (var record in _recordRepository.GetRecordsAsync())
+            {
+                _records.Add(record);
+            }
         }
 
-        private void dpFromDate_SelectedDateChanged(object sender, System.Windows.Controls.SelectionChangedEventArgs e)
+        private async void Filter_Executed(object sender, ExecutedRoutedEventArgs e)
         {
-            _filterForm.FromDate = dpFromDate.SelectedDate;
+            _records.Clear();
+            await foreach (var record in _recordRepository.SearchAsync(_filterForm))
+            {
+                _records.Add(record);
+            }
         }
 
-        private void dpToDate_SelectedDateChanged(object sender, System.Windows.Controls.SelectionChangedEventArgs e)
+        private async void Clear_Executed(object sender, ExecutedRoutedEventArgs e)
         {
-            _filterForm.ToDate = dpToDate.SelectedDate;
-        }
-
-        private void txtFirstNameFilter_TextChanged(object sender, TextChangedEventArgs e)
-        {
-            _filterForm.FirstName = txtFirstNameFilter.Text.Trim();
-        }
-
-        private void txtLastNameFilter_TextChanged(object sender, TextChangedEventArgs e)
-        {
-            _filterForm.LastName = txtLastNameFilter.Text.Trim();
-        }
-
-        private void txtCityFilter_TextChanged(object sender, TextChangedEventArgs e)
-        {
-            _filterForm.City = txtCityFilter.Text.Trim();
-        }
-
-        private void txtCountryFilter_TextChanged(object sender, TextChangedEventArgs e)
-        {
-            _filterForm.Country = txtCountryFilter.Text.Trim();
-        }
-
-        private async void btnFilter_Click(object sender, RoutedEventArgs e)
-        {
-            dataGrid.ItemsSource = await _recordRepository.Search(_filterForm);
-        }
-
-        private async void btnClear_Click(object sender, RoutedEventArgs e)
-        {
+            _filterForm.ClearForm();
             await LoadDataAsync();
+        }
+
+        private void CsvImporter_ProgressChanged(object sender, ProgressChange e)
+        {
+            Dispatcher.Invoke(() =>
+            {
+                int percent = (int)((double)e.Current / e.Total * 100);
+                _viewModel.StatusBarVisibility = Visibility.Visible;
+                _viewModel.StatusMessage = e.Message;
+                _viewModel.Progress = (int)((double)e.Current / e.Total * 100);
+            });
+        }
+
+        private void SetLanguage(string language)
+        {
+            Thread.CurrentThread.CurrentCulture = new CultureInfo(language);
+            Thread.CurrentThread.CurrentUICulture = new CultureInfo(language);
+
+            var metroResourceDictionaries = Application.Current.Resources.MergedDictionaries
+                .Where(d => d.Source != null && d.Source.OriginalString.Contains("MahApps.Metro"))
+                .ToList();
+
+            Application.Current.Resources.MergedDictionaries.Clear();
+
+            foreach (var dict in metroResourceDictionaries)
+            {
+                Application.Current.Resources.MergedDictionaries.Add(dict);
+            }
+
+            ResourceDictionary languageDict = new ResourceDictionary()
+            {
+                Source = new Uri($"/Dictionary-{language}.xaml", UriKind.Relative)
+            };
+            Application.Current.Resources.MergedDictionaries.Add(languageDict);
+        }
+
+        private void ChangeLanguage_Executed(object sender, ExecutedRoutedEventArgs e)
+        {
+            if (e.OriginalSource is MenuItem menuItem && menuItem.Tag is string language)
+            {
+                SetLanguage(language);
+            }
         }
     }
 }

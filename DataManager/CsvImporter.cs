@@ -1,63 +1,69 @@
 ﻿using CsvHelper;
 using CsvHelper.Configuration;
+using System;
 using System.Collections.Generic;
+using System.Configuration;
 using System.Globalization;
 using System.IO;
 using System.Linq;
 using System.Threading.Tasks;
-using System.Windows;
 
 namespace DataManager
 {
     internal class CsvImporter
     {
-        public ImportViewModel _viewModel;
+        public event EventHandler<ProgressChange> ProgressChanged;
 
-        public CsvImporter(ImportViewModel viewModel)
-        {
-            _viewModel = viewModel;
-        }
-
-        public async Task ImportCsv(string filePath)
+        public async Task ImportCsvAsync(string filePath)
         {
             var config = new CsvConfiguration(CultureInfo.InvariantCulture)
             {
                 Delimiter = ";",
             };
-            int totalRecords = File.ReadLines(filePath).Count() - 1;
+            int totalRecords = await GetTotalRecordsAsync(filePath);
             int processedRecords = 0;
-            _viewModel.StatusBarVisibility = Visibility.Visible;
-            _viewModel.StatusMessage = "Starting import...";
-            _viewModel.Progress = 0;
+            OnProgressChanged(new ProgressChange(totalRecords, processedRecords, "Starting import..."));
+
+            await foreach (var batch in ReadRecordsAsync(filePath, config))
+            {
+                await SaveBatchAsync(batch);
+                processedRecords += batch.Count;
+                UpdateProgress(processedRecords, totalRecords);
+            }
+        }
+
+        private async Task<int> GetTotalRecordsAsync(string filePath)
+        {
+            return await Task.Run(() => File.ReadLines(filePath).Count() - 1);
+        }
+
+        private async IAsyncEnumerable<List<Record>> ReadRecordsAsync(string filePath, CsvConfiguration config)
+        {
+            int batchSize = int.Parse(ConfigurationManager.AppSettings["BatchSize"]);
+            var batch = new List<Record>();
 
             using (var reader = new StreamReader(filePath))
             using (var csv = new CsvReader(reader, config))
             {
-                int batchSize = 1000;
-                var batch = new List<Record>();
-
-                while (await csv.ReadAsync())
+                csv.Context.RegisterClassMap<RecordMap>();
+                await foreach (var record in csv.GetRecordsAsync<Record>())
                 {
-                    csv.Context.RegisterClassMap<RecordMap>();
-                    var record = csv.GetRecord<Record>();
                     batch.Add(record);
-                    processedRecords++;
 
                     if (batch.Count >= batchSize)
                     {
-                        await SaveBatchAsync(batch);
-                        batch.Clear();
-                        UpdateProgress(processedRecords, totalRecords);
+                        yield return batch;
+                        batch = new List<Record>();
                     }
                 }
 
                 if (batch.Count > 0)
                 {
-                    await SaveBatchAsync(batch);
-                    UpdateProgress(processedRecords, totalRecords);
+                    yield return batch;
                 }
             }
         }
+
 
         private async Task SaveBatchAsync(List<Record> batch)
         {
@@ -75,13 +81,12 @@ namespace DataManager
             {
                 message = "Done";
             }
-            _viewModel.StatusMessage = message;
-            _viewModel.Progress = (int)((double)processedRecords / totalRecords * 100);
+            OnProgressChanged(new ProgressChange(totalRecords, processedRecords, message));
         }
 
-        public void HideProgress()
+        protected virtual void OnProgressChanged(ProgressChange e)
         {
-            _viewModel.StatusBarVisibility = Visibility.Collapsed;
+            ProgressChanged?.Invoke(this, e);
         }
     }
 }

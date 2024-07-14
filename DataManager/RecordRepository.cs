@@ -1,7 +1,6 @@
 ﻿using System.Collections.Generic;
 using System.Data.Entity;
 using System.Linq;
-using System.Threading.Tasks;
 
 namespace DataManager
 {
@@ -14,12 +13,15 @@ namespace DataManager
             _appDbContext = appDbContext;
         }
 
-        public async Task<IEnumerable<Record>> GetRecords()
+        public async IAsyncEnumerable<Record> GetRecordsAsync()
         {
-            return await _appDbContext.Records.ToListAsync();
+            var records = await _appDbContext.Records.ToListAsync();
+            foreach (var record in records)
+            {
+                yield return record;
+            }
         }
-
-        public async Task<IEnumerable<Record>> Search(FilterForm filterForm)
+        public async IAsyncEnumerable<Record> SearchAsync(FilterForm filterForm)
         {
             IQueryable<Record> query = _appDbContext.Records;
 
@@ -56,7 +58,11 @@ namespace DataManager
                 query = query.Where(r => r.Date <= filterForm.ToDate);
             }
 
-            return await query.ToListAsync();
+            var records = await query.ToListAsync();
+            foreach (var record in records)
+            {
+                yield return record;
+            }
         }
     }
 }
