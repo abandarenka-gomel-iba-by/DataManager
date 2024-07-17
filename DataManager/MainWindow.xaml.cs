@@ -2,10 +2,10 @@
 using MahApps.Metro.Controls;
 using Microsoft.Win32;
 using System;
-using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.ComponentModel;
 using System.Configuration;
+using System.Data.SqlClient;
 using System.Globalization;
 using System.Linq;
 using System.Threading;
@@ -54,8 +54,14 @@ namespace DataManager
             bool connectionEstablished = false;
             while (!connectionEstablished)
             {
+                string connectionString = ConfigurationManager.ConnectionStrings["AppDbContext"].ConnectionString;
                 try
                 {
+                    using (var connection = new SqlConnection(connectionString))
+                    {
+                        connection.Open();
+                    }
+
                     _context = new AppDbContext();
                     _context.Database.Initialize(false);
                     connectionEstablished = true;
@@ -63,8 +69,8 @@ namespace DataManager
                 catch (Exception ex)
                 {
                     HandleDisplayError(ex, "Failed to connect to the database. Please edit the connection string.");
-                    string connectionString = ConfigurationManager.ConnectionStrings["AppDbContext"].ConnectionString;
                     ConnectionDBWindow connectionStringWindow = new ConnectionDBWindow(connectionString);
+
                     if (connectionStringWindow.ShowDialog() == true)
                     {
                         UpdateConnectionString(connectionStringWindow.ConnectionString);
@@ -145,8 +151,7 @@ namespace DataManager
             saveFileDialog.Filter = "Excel files (*.xlsx)|*.xlsx";
             if (saveFileDialog.ShowDialog() == true)
             {
-                var records = dataGrid.ItemsSource as List<Record>;
-                await _dataExporter.ExportToExcelAsync(records, saveFileDialog.FileName);
+                await _dataExporter.ExportToExcelAsync(_records, saveFileDialog.FileName);
             }
         }
 
@@ -156,8 +161,7 @@ namespace DataManager
             saveFileDialog.Filter = "XML files (*.xml)|*.xml";
             if (saveFileDialog.ShowDialog() == true)
             {
-                var records = dataGrid.ItemsSource as List<Record>;
-                await _dataExporter.ExportToXmlAsync(records, saveFileDialog.FileName);
+                await _dataExporter.ExportToXmlAsync(_records, saveFileDialog.FileName);
             }
         }
 
