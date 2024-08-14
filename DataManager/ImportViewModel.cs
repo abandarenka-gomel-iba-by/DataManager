@@ -39,8 +39,21 @@ namespace DataManager
             get => _statusBarVisibility;
             set
             {
-                _statusBarVisibility = value;
-                OnPropertyChanged();
+                if (_statusBarVisibility != value)
+                {
+                    _statusBarVisibility = value;
+                    OnPropertyChanged(nameof(StatusBarVisibility));
+                    OnPropertyChanged(nameof(IsStatusBarVisible));
+                }
+            }
+        }
+
+        public bool IsStatusBarVisible
+        {
+            get => _statusBarVisibility == Visibility.Visible;
+            set
+            {
+                StatusBarVisibility = value ? Visibility.Visible : Visibility.Collapsed;
             }
         }
 

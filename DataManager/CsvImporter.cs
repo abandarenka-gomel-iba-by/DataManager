@@ -5,7 +5,6 @@ using System.Collections.Generic;
 using System.Configuration;
 using System.Globalization;
 using System.IO;
-using System.Linq;
 using System.Threading.Tasks;
 
 namespace DataManager
@@ -20,27 +19,24 @@ namespace DataManager
             {
                 Delimiter = ";",
             };
-            int totalRecords = await GetTotalRecordsAsync(filePath);
-            int processedRecords = 0;
-            OnProgressChanged(new ProgressChange(totalRecords, processedRecords, "Starting import..."));
+            long totalBytes = new FileInfo(filePath).Length;
+            long processedBytes = 0;
+
+            OnProgressChanged(new ProgressChange(totalBytes, processedBytes, "Starting import..."));
 
             await foreach (var batch in ReadRecordsAsync(filePath, config))
             {
-                await SaveBatchAsync(batch);
-                processedRecords += batch.Count;
-                UpdateProgress(processedRecords, totalRecords);
+                await SaveBatchAsync(batch.Records);
+                processedBytes = batch.ProcessedBytes;
+                UpdateProgress(totalBytes, processedBytes);
             }
         }
 
-        private async Task<int> GetTotalRecordsAsync(string filePath)
-        {
-            return await Task.Run(() => File.ReadLines(filePath).Count() - 1);
-        }
-
-        private async IAsyncEnumerable<List<Record>> ReadRecordsAsync(string filePath, CsvConfiguration config)
+        private async IAsyncEnumerable<(List<Record> Records, long ProcessedBytes)> ReadRecordsAsync(string filePath, CsvConfiguration config)
         {
             int batchSize = int.Parse(ConfigurationManager.AppSettings["BatchSize"]);
             var batch = new List<Record>();
+            long processedBytes = 0;
 
             using (var reader = new StreamReader(filePath))
             using (var csv = new CsvReader(reader, config))
@@ -49,21 +45,21 @@ namespace DataManager
                 await foreach (var record in csv.GetRecordsAsync<Record>())
                 {
                     batch.Add(record);
+                    processedBytes = reader.BaseStream.Position;
 
                     if (batch.Count >= batchSize)
                     {
-                        yield return batch;
+                        yield return (batch, processedBytes);
                         batch = new List<Record>();
                     }
                 }
 
                 if (batch.Count > 0)
                 {
-                    yield return batch;
+                    yield return (batch, processedBytes);
                 }
             }
         }
-
 
         private async Task SaveBatchAsync(List<Record> batch)
         {
@@ -74,14 +70,14 @@ namespace DataManager
             }
         }
 
-        private void UpdateProgress(int processedRecords, int totalRecords)
+        private void UpdateProgress(long total, long processed)
         {
             string message = "Loading...";
-            if (processedRecords == totalRecords)
+            if (processed >= total)
             {
                 message = "Done";
             }
-            OnProgressChanged(new ProgressChange(totalRecords, processedRecords, message));
+            OnProgressChanged(new ProgressChange(total, processed, message));
         }
 
         protected virtual void OnProgressChanged(ProgressChange e)
