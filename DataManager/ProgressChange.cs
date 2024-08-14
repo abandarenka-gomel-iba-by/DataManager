@@ -1,15 +1,15 @@
-﻿namespace DataManager
+﻿using System.Diagnostics;
+
+namespace DataManager
 {
     public class ProgressChange
     {
-        public int Total { get; }
-        public int Current { get; }
+        public int Percent { get; }
         public string Message { get; }
 
-        public ProgressChange(int total, int current, string message)
+        public ProgressChange(long total, long processed, string message)
         {
-            Total = total;
-            Current = current;
+            Percent = (int)(((double)processed / total) * 100);
             Message = message;
         }
     }

@@ -129,12 +129,12 @@ namespace DataManager
                 catch (CsvHelperException ex)
                 {
                     HandleDisplayError(ex, "CSV format error");
-                    _viewModel.StatusBarVisibility = Visibility.Collapsed;
+                    _viewModel.IsStatusBarVisible = false;
                 }
                 catch (Exception ex)
                 {
                     HandleDisplayError(ex, "An error occurred");
-                    _viewModel.StatusBarVisibility = Visibility.Collapsed;
+                    _viewModel.IsStatusBarVisible = false;
                 }
 
                 await LoadDataAsync();
@@ -192,10 +192,9 @@ namespace DataManager
         {
             Dispatcher.Invoke(() =>
             {
-                int percent = (int)((double)e.Current / e.Total * 100);
-                _viewModel.StatusBarVisibility = Visibility.Visible;
+                _viewModel.IsStatusBarVisible = true;
                 _viewModel.StatusMessage = e.Message;
-                _viewModel.Progress = (int)((double)e.Current / e.Total * 100);
+                _viewModel.Progress = e.Percent;
             });
         }
 
